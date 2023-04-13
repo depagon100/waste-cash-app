@@ -1,0 +1,5 @@
+export enum BidderSetupActions {
+  CREATE_BIDDER_SETUP = 'bidderSetup/CREATE_BIDDER_SETUP',
+  SET_BIDDER_SETUP_SUCCESS = 'bidderSetup/SET_BIDDER_SETUP_SUCCESS',
+  UPDATE_BIDDER_SETUP = 'bidderSetup/UPDATE_BIDDER_SETUP',
+}

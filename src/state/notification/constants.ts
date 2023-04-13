@@ -1,0 +1,5 @@
+export enum NotificationActions {
+  GET_NOTIFICATION_LIST = 'notification/GET_NOTIFICATION_LIST',
+  SEEN_NOTIFICATION = 'notification/SEEN_NOTIFICATION',
+  SET_NOTIFICATION_ERROR = 'notification/SET_NOTIFICATION_ERROR',
+}

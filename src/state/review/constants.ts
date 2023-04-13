@@ -1,0 +1,6 @@
+export enum ReviewActions {
+  CREATE_REVIEW = 'review/CREATE_REVIEW',
+  GET_REVIEW_LIST = 'reivew/GET_REVIEW_LIST',
+  SET_REVIEW_ERROR = 'review/SET_PRODUCT_ERROR',
+  SET_REVIEW_SUCCESS = 'review/SET_PRODUCT_SUCCESS',
+}

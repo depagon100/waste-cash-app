@@ -1,0 +1,167 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+import {
+  IConversationState,
+  IConversationSummary,
+  IMessage,
+} from '../../types';
+import {
+  addConversationDataMessage,
+  addConversationListMessage,
+  sendMessage,
+  getConversationData,
+  getConversationList,
+  setConversationData,
+  setConversationList,
+  setConversationError,
+} from './actions';
+
+const initialState: IConversationState = {
+  isLoading: false,
+  error: '',
+  data: null,
+  list: [],
+};
+
+export const conversationSlice = createSlice({
+  name: 'conversation',
+  initialState,
+  reducers: {},
+  extraReducers: {
+    // Add Conversation Data Message
+    [`${addConversationDataMessage.type}`]: (state, action) => ({
+      ...state,
+      data: {
+        ...state.data,
+        messages: [action.payload, ...(state.data?.messages || [])],
+      },
+    }),
+
+    // Add Conversation List Message
+    [`${addConversationListMessage.type}`]: (
+      state,
+      action: { payload: IMessage },
+    ) => {
+      const conversdationIndex = state.list.filter(
+        (conversation) => conversation.id === action.payload?.conversation?.id,
+      );
+
+      const {
+        payload: {
+          id,
+          content,
+          isSeen,
+          createdAt,
+          conversation,
+          recipient,
+          sender,
+        },
+      } = action;
+      const newConversation: IConversationSummary = {
+        id: conversation?.id as number,
+        message: {
+          id,
+          content,
+          isSeen,
+          createdAt,
+        },
+        recipient: {
+          id: recipient.id,
+          firstName: recipient.firstName,
+          lastName: recipient.lastName,
+        },
+        sender: {
+          id: sender.id,
+          firstName: sender.firstName,
+          lastName: sender.lastName,
+        },
+      };
+
+      if (conversdationIndex.length) {
+        let oldConversations = [...state.list];
+        oldConversations = oldConversations.filter(
+          (conversationSummary) =>
+            conversationSummary.id !== action.payload?.conversation?.id,
+        );
+
+        return {
+          ...state,
+          list: [newConversation, ...oldConversations],
+        };
+      } else {
+        return {
+          ...state,
+          list: [newConversation, ...state.list],
+        };
+      }
+    },
+
+    // Send Message
+    [`${sendMessage.pending}`]: (state) => ({
+      ...state,
+    }),
+
+    [`${sendMessage.fulfilled}`]: (state) => ({
+      ...state,
+    }),
+
+    [`${sendMessage.rejected}`]: (state, action) => ({
+      ...state,
+      error: action.payload,
+    }),
+
+    // Get Conversation Data
+    [`${getConversationData.pending}`]: (state) => ({
+      ...state,
+      isLoading: true,
+      data: null,
+    }),
+
+    [`${getConversationData.fulfilled}`]: (state) => ({
+      ...state,
+      isLoading: false,
+    }),
+
+    [`${getConversationData.rejected}`]: (state, action) => ({
+      ...state,
+      error: action.payload,
+      data: null,
+      isLoading: false,
+    }),
+
+    // Get Conversation List
+    [`${getConversationList.pending}`]: (state) => ({
+      ...state,
+      isLoading: true,
+    }),
+
+    [`${getConversationList.fulfilled}`]: (state) => ({
+      ...state,
+      isLoading: false,
+    }),
+
+    [`${getConversationList.rejected}`]: (state, action) => ({
+      ...state,
+      error: action.payload,
+      isLoading: false,
+    }),
+
+    // Set Conversation Data
+    [`${setConversationData.type}`]: (state, action) => ({
+      ...state,
+      data: action.payload,
+    }),
+
+    // Set Conversation List
+    [`${setConversationList.type}`]: (state, action) => ({
+      ...state,
+      list: action.payload,
+    }),
+
+    // Set Conversation Error
+    [`${setConversationError.type}`]: (state, action) => ({
+      ...state,
+      error: action.payload || '',
+    }),
+  },
+});

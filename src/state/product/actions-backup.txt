@@ -1,0 +1,159 @@
+import { createAction, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+import {
+  ProductStatus,
+  UserRoles,
+  IProductOffer,
+  IProduct,
+  IServiceError,
+} from '../../types';
+import { Product } from '@services/index';
+import { RootState } from '../store';
+import { ProductActions } from './constants';
+import { tokenSelector, userDataSelector } from '../user/selectors';
+import { setAppError } from '../app/actions';
+
+export const addProduct = createAction<IProduct>(ProductActions.ADD_PRODUCT);
+
+export const addProductOffer = createAction<IProductOffer>(
+  ProductActions.ADD_PRODUCT_OFFER,
+);
+
+export const setProductError = createAction<string | null>(
+  ProductActions.SET_PRODUCT_ERROR,
+);
+
+export const setProductSuccess = createAction<string | null>(
+  ProductActions.SET_PRODUCT_SUCCESS,
+);
+
+export const setProductData = createAction<IProduct | null>(
+  ProductActions.SET_PRODUCT_DATA,
+);
+
+export const setProductList = createAction<IProduct[]>(
+  ProductActions.SET_PRODUCT_LIST,
+);
+
+export const createProduct = createAsyncThunk(
+  ProductActions.CREATE_PRODUCT,
+  async (
+    params: {
+      photo: any;
+      name: string;
+      category: string;
+      description: string;
+      price: number;
+      status: ProductStatus;
+    },
+    thunkAPI,
+  ) => {
+    try {
+      const state = thunkAPI.getState() as RootState;
+      const token = tokenSelector(state);
+      const formData = new FormData();
+
+      // append required params to create product
+      formData.append('image', {
+        name: params.photo.fileName,
+        type: params.photo.type,
+        uri: params.photo.uri,
+      });
+      formData.append('name', params.name);
+      formData.append('category', params.category);
+      formData.append('description', params.description);
+      formData.append('price', params.price);
+      formData.append('status', params.status);
+
+      const createdProduct = await Product.createProduct({ formData, token });
+
+      thunkAPI.dispatch(setProductSuccess('Succesfully created product.'));
+      thunkAPI.dispatch(addProduct(createdProduct.data));
+
+      return Promise.resolve();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error?.response) {
+          const axiosError = error?.response as IServiceError;
+          if (axiosError?.status && axiosError.status === 400) {
+            return thunkAPI.rejectWithValue(axiosError.data.message);
+          }
+        }
+      }
+
+      // set global error
+      thunkAPI.dispatch(setAppError('Server is busy. Please try again later.'));
+
+      return Promise.resolve();
+    }
+  },
+);
+
+export const getProductData = createAsyncThunk(
+  ProductActions.GET_PRODUCT_DATA,
+  async (params: { productId: number }, thunkAPI) => {
+    try {
+      const productData = await Product.getProduct({
+        productId: params.productId,
+      });
+
+      thunkAPI.dispatch(setProductData(productData.data));
+
+      return Promise.resolve();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error?.response) {
+          const axiosError = error?.response as IServiceError;
+          if (axiosError?.status && axiosError.status === 400) {
+            return thunkAPI.rejectWithValue(axiosError.data.message);
+          }
+        }
+      }
+
+      // set global error
+      thunkAPI.dispatch(setAppError('Server is busy. Please try again later.'));
+
+      return Promise.resolve();
+    }
+  },
+);
+
+export const getProductList = createAsyncThunk(
+  ProductActions.GET_PRODUCT_LIST,
+  async (_, thunkAPI) => {
+    try {
+      const state = thunkAPI.getState() as RootState;
+      const user = userDataSelector(state);
+
+      let productList;
+      if (user.role === UserRoles.SELLER) {
+        const token = tokenSelector(state);
+
+        productList = await Product.getOwnerProducts({ token });
+      } else if (user.role === UserRoles.BUYER) {
+        productList = await Product.getProducts();
+      }
+
+      if (productList) {
+        thunkAPI.dispatch(setProductList(productList.data));
+      }
+
+      return Promise.resolve();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error?.response) {
+          const axiosError = error?.response as IServiceError;
+          if (axiosError?.status && axiosError.status === 400) {
+            return thunkAPI.rejectWithValue(axiosError.data.message);
+          }
+        }
+      }
+
+      // set global error
+      thunkAPI.dispatch(setAppError('Server is busy. Please try again later.'));
+
+      return Promise.resolve();
+    }
+  },
+);
